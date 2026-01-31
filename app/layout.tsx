@@ -5,7 +5,7 @@ import "./globals.css";
 import { CurrentProjectId } from "@/lib/ProjectId";
 import { getProjectMetadata } from "@/server-actions/metatags";
 import { StructuredData } from "@/components/StructuredData";
-
+import { Analytics } from "@vercel/analytics/next";
 const cairoFont = Cairo({
   weight: ["1000", "200", "300", "400", "500", "600", "700", "800", "900"],
   subsets: ["arabic"],
@@ -84,7 +84,11 @@ export default async function RootLayout({
           phone={data.phone}
         />
       </head>
-      <body className={`${cairoFont.className} antialiased`}>{children}</body>
+      <body className={`${cairoFont.className} antialiased`}>
+        {children}
+
+        <Analytics />
+      </body>
     </html>
   );
 }
