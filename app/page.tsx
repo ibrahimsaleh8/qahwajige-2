@@ -9,8 +9,6 @@ import { CurrentProjectId } from "@/lib/ProjectId";
 import { ProjectContentResponse } from "@/lib/responseType";
 import { getProjectContent } from "@/server-actions/main-data";
 
-export const dynamic = "force-dynamic";
-
 export default async function HomePage() {
   let data;
 

@@ -15,16 +15,10 @@ export async function GET(
       );
     }
 
-    // Fetch project with aboutSection and WhyUsFeature
     const project = await prisma.project.findUnique({
       where: { id },
       include: {
         aboutSection: true,
-        whyUsSection: {
-          include: {
-            features: true, // fetch the WhyUsFeature items
-          },
-        },
       },
     });
 
@@ -39,7 +33,6 @@ export async function GET(
       );
     }
 
-    // Map about section
     const about = {
       id: project.aboutSection.id,
       label: project.aboutSection.label,
@@ -48,22 +41,12 @@ export async function GET(
       image: project.aboutSection.image,
     };
 
-    // Map features to match AboutUsSection structure
-    const features =
-      project.whyUsSection?.features.map((feature) => ({
-        id: feature.id,
-        icon: feature.icon, // you can map this to Lucide icons later
-        title: feature.title,
-        description: feature.description,
-      })) || [];
-
     return NextResponse.json(
       {
         success: true,
         message: "About project data fetched successfully",
         data: {
           about,
-          features,
         },
       },
       { status: 200 },
