@@ -16,16 +16,16 @@ export default async function Layout({
     redirect("/login");
   }
   return (
-    <div className="flex w-full">
+    <div className="flex w-full text-black">
       <SidebarProvider>
         <DashboardSidebar />
 
-        <main className="flex flex-col gap-3 w-full">
-          <div className="p-3 bg-main-color! text-white flex items-center justify-between">
+        <main className="flex flex-col w-full">
+          <div className="p-3 flex items-center justify-between bg-main-color text-white">
             <SidebarTrigger />
             <div className="flex items-center gap-6">
               <Link
-                className="px-4 py-3 bg-white text-black hover:opacity-65 duration-500 rounded-md text-sm flex items-center gap-2"
+                className="px-4 py-2 bg-white text-black hover:opacity-65 duration-500 rounded-md text-sm flex items-center gap-2"
                 href={"/"}>
                 <House className="w-4 h-4" />
                 الصفحة الرئيسية
@@ -33,7 +33,7 @@ export default async function Layout({
               <LogoutBtn />
             </div>
           </div>
-          <div className="p-5 bg-white min-h-[calc(100vh-5rem)]">
+          <div className="p-5 bg-[#FCFBFC] min-h-[calc(100vh-3.9rem)]">
             {children}
           </div>
         </main>

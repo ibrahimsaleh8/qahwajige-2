@@ -5,22 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/app/(Dashboard)/_components/Toast";
-import {
-  BriefcaseBusiness,
-  CalendarDays,
-  Medal,
-  Coffee,
-  Users,
-  Heart,
-  Building2,
-  LucideIcon,
-} from "lucide-react";
+import { Coffee, Users, Heart, Building2, LucideIcon } from "lucide-react";
+import { APP_URL } from "@/lib/ProjectId";
 
 interface Service {
   id: string;
+  sectionId: string;
   icon: string;
   title: string;
   description: string;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -39,9 +33,6 @@ interface ServicesFormProps {
 
 // Icon mapping
 const iconMap: Record<string, LucideIcon> = {
-  BriefcaseBusiness,
-  CalendarDays,
-  Medal,
   Coffee,
   Users,
   Heart,
@@ -52,26 +43,28 @@ export default function ServicesForm({
   projectId,
   servicesSection,
 }: ServicesFormProps) {
-  // Section form state
   const [sectionData, setSectionData] = useState({
     label: servicesSection.label,
     title: servicesSection.title,
     description: servicesSection.description,
   });
 
-  // Services cards state
   const [services, setServices] = useState<Service[]>(servicesSection.services);
-  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  // Track which operation is loading
   const [loadingOperation, setLoadingOperation] = useState<
     "section" | "service" | null
   >(null);
 
-  // --- Handlers ---
   const handleSectionChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    setSectionData({ ...sectionData, [e.target.name]: e.target.value });
+    setSectionData({
+      ...sectionData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleServiceChange = (
@@ -80,66 +73,26 @@ export default function ServicesForm({
     value: string,
   ) => {
     setServices(
-      services.map((s) => (s.id === serviceId ? { ...s, [field]: value } : s)),
+      services.map((service) =>
+        service.id === serviceId ? { ...service, [field]: value } : service,
+      ),
     );
-  };
-
-  const handleSaveSection = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setLoadingOperation("section");
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboard/${projectId}/update-services`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sectionData),
-        },
-      );
-      if (res.ok)
-        Toast({ icon: "success", message: "تم حفظ بيانات القسم بنجاح" });
-      else {
-        const errorData = await res.json().catch(() => null);
-        Toast({
-          icon: "error",
-          message: errorData?.message || "حدث خطأ أثناء الحفظ",
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      Toast({ icon: "error", message: "حدث خطأ أثناء الحفظ" });
-    } finally {
-      setIsLoading(false);
-      setLoadingOperation(null);
-    }
   };
 
   const handleSaveService = async (serviceId: string) => {
     setIsLoading(true);
     setLoadingOperation("service");
-
-    // Find the service to update
     const serviceToUpdate = services.find((s) => s.id === serviceId);
+
     if (!serviceToUpdate) {
       setIsLoading(false);
       setLoadingOperation(null);
       return;
     }
 
-    // Destructure and make sure all required fields exist
-    const { title, description, icon } = serviceToUpdate;
-
-    if (!title || !description || !icon) {
-      Toast({ icon: "error", message: "جميع الحقول مطلوبة" });
-      setIsLoading(false);
-      setLoadingOperation(null);
-      return;
-    }
-
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/dashboard/${projectId}/update-service`,
+        `${APP_URL}/api/dashboard/${projectId}/update-service`,
         {
           method: "PUT",
           headers: {
@@ -147,9 +100,9 @@ export default function ServicesForm({
           },
           body: JSON.stringify({
             serviceId,
-            title,
-            description,
-            icon,
+            title: serviceToUpdate.title,
+            description: serviceToUpdate.description,
+            icon: serviceToUpdate.icon,
           }),
         },
       );
@@ -158,22 +111,26 @@ export default function ServicesForm({
         const data = await res.json();
         if (data.data?.service) {
           setServices(
-            services.map((s) =>
-              s.id === serviceId ? { ...s, ...data.data.service } : s,
+            services.map((service) =>
+              service.id === serviceId
+                ? { ...service, ...data.data.service }
+                : service,
             ),
           );
         }
         Toast({ icon: "success", message: "تم حفظ الخدمة بنجاح" });
         setEditingServiceId(null);
+        await fetch("/api/revalidate-main-data");
       } else {
         const errorData = await res.json().catch(() => null);
+        console.error("Error response:", errorData);
         Toast({
           icon: "error",
           message: errorData?.message || "حدث خطأ أثناء الحفظ",
         });
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error saving service:", error);
       Toast({ icon: "error", message: "حدث خطأ أثناء الحفظ" });
     } finally {
       setIsLoading(false);
@@ -182,15 +139,60 @@ export default function ServicesForm({
   };
 
   const handleCancelEdit = (serviceId: string) => {
-    const original = servicesSection.services.find((s) => s.id === serviceId);
-    if (original)
-      setServices(services.map((s) => (s.id === serviceId ? original : s)));
+    // Reset service data to original
+    const originalService = servicesSection.services.find(
+      (s) => s.id === serviceId,
+    );
+    if (originalService) {
+      setServices(
+        services.map((service) =>
+          service.id === serviceId ? originalService : service,
+        ),
+      );
+    }
     setEditingServiceId(null);
+  };
+
+  const handleSaveSection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setLoadingOperation("section");
+
+    try {
+      const res = await fetch(
+        `${APP_URL}/api/dashboard/${projectId}/update-services`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(sectionData),
+        },
+      );
+
+      if (res.ok) {
+        Toast({ icon: "success", message: "تم حفظ بيانات القسم بنجاح" });
+      } else {
+        const errorData = await res.json().catch(() => null);
+        console.error("Error response:", errorData);
+        Toast({
+          icon: "error",
+          message: errorData?.message || "حدث خطأ أثناء الحفظ",
+        });
+      }
+      await fetch("/api/revalidate-main-data");
+    } catch (error) {
+      console.error("Error saving section data:", error);
+      Toast({ icon: "error", message: "حدث خطأ أثناء الحفظ" });
+    } finally {
+      setIsLoading(false);
+      setLoadingOperation(null);
+    }
   };
 
   const getIcon = (iconName: string) => {
     const Icon = iconMap[iconName];
-    return Icon ? <Icon className="w-12 h-12" /> : null;
+    return Icon ? <Icon className="w-6 h-6" /> : null;
   };
 
   return (
@@ -267,99 +269,153 @@ export default function ServicesForm({
         </div>
       </div>
 
-      {/* Editable Modern Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-6">
-        {services.map((service) => {
-          const isEditing = editingServiceId === service.id;
-          const isThisServiceLoading = isLoading && isEditing;
+      {/* Services Cards */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">الخدمات المتاحة</h2>
+          <span className="text-sm text-gray-500">
+            {services.length} {services.length === 1 ? "خدمة" : "خدمات"}
+          </span>
+        </div>
 
-          return (
-            <div
-              key={service.id}
-              className="group bg-white rounded-xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-transparent hover:border-main-color/10">
-              <div className="flex justify-center mb-6">
-                <div className="p-4 rounded-xl bg-main-color/10 group-hover:bg-main-color group-hover:text-white transition-colors">
-                  {getIcon(service.icon)}
-                </div>
-              </div>
-
-              {isEditing ? (
-                <>
-                  <Input
-                    value={service.title}
-                    onChange={(e) =>
-                      handleServiceChange(service.id, "title", e.target.value)
-                    }
-                    className="text-xl font-bold mb-3"
-                    disabled={isThisServiceLoading}
-                  />
-
-                  <Textarea
-                    value={service.description}
-                    onChange={(e) =>
-                      handleServiceChange(
-                        service.id,
-                        "description",
-                        e.target.value,
-                      )
-                    }
-                    rows={4}
-                    className="mb-3"
-                    disabled={isThisServiceLoading}
-                  />
-
-                  <select
-                    value={service.icon}
-                    onChange={(e) =>
-                      handleServiceChange(service.id, "icon", e.target.value)
-                    }
-                    className="w-full p-2 mb-3 border border-gray-300 rounded-md"
-                    disabled={isThisServiceLoading}>
-                    {Object.keys(iconMap).map((iconKey) => (
-                      <option key={iconKey} value={iconKey}>
-                        {iconKey}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleSaveService(service.id)}
-                      size="sm"
-                      className="flex-1"
-                      disabled={isThisServiceLoading}>
-                      {isThisServiceLoading ? "جاري الحفظ..." : "حفظ"}
-                    </Button>
-                    <Button
-                      onClick={() => handleCancelEdit(service.id)}
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      disabled={isThisServiceLoading}>
-                      إلغاء
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h4 className="text-xl font-bold mb-3">{service.title}</h4>
-                  <p className="text-gray-500 mb-4 line-clamp-4">
-                    {service.description}
-                  </p>
-                  <div className="h-1 w-12 bg-main-color rounded-full group-hover:w-full transition-all duration-500 mb-4" />
-                  <Button
-                    onClick={() => setEditingServiceId(service.id)}
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    disabled={isLoading}>
-                    تعديل
-                  </Button>
-                </>
-              )}
+        {services.length === 0 ? (
+          <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="p-6 py-8 text-center text-gray-500">
+              لا توجد خدمات متاحة حالياً
             </div>
-          );
-        })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {services.map((service) => {
+              const isEditing = editingServiceId === service.id;
+              const isThisServiceLoading =
+                isLoading && loadingOperation === "service" && isEditing;
+
+              return (
+                <div
+                  key={service.id}
+                  className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                  {/* Header */}
+                  <div className="p-6 flex items-center gap-3 pb-3 border-b border-gray-100">
+                    <div className="p-2 bg-blue-100 rounded-lg shrink-0">
+                      {getIcon(service.icon)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        <Input
+                          value={service.title}
+                          onChange={(e) =>
+                            handleServiceChange(
+                              service.id,
+                              "title",
+                              e.target.value,
+                            )
+                          }
+                          className="text-lg font-semibold"
+                          placeholder="عنوان الخدمة"
+                          disabled={isThisServiceLoading}
+                        />
+                      ) : (
+                        <h3 className="text-lg font-semibold truncate">
+                          {service.title}
+                        </h3>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <div className="p-6 pt-4 space-y-4">
+                    {isEditing ? (
+                      <>
+                        <div>
+                          <label className="block mb-2 text-sm font-medium text-gray-700">
+                            الأيقونة
+                          </label>
+                          <select
+                            value={service.icon}
+                            onChange={(e) =>
+                              handleServiceChange(
+                                service.id,
+                                "icon",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full p-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={isThisServiceLoading}>
+                            <option value="Coffee">☕ Coffee - قهوة</option>
+                            <option value="Users">👥 Users - مستخدمين</option>
+                            <option value="Heart">❤️ Heart - قلب</option>
+                            <option value="Building2">
+                              🏢 Building2 - مبنى
+                            </option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block mb-2 text-sm font-medium text-gray-700">
+                            الوصف
+                          </label>
+                          <Textarea
+                            value={service.description}
+                            onChange={(e) =>
+                              handleServiceChange(
+                                service.id,
+                                "description",
+                                e.target.value,
+                              )
+                            }
+                            rows={4}
+                            placeholder="وصف الخدمة"
+                            disabled={isThisServiceLoading}
+                          />
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            onClick={() => handleSaveService(service.id)}
+                            disabled={isThisServiceLoading}
+                            size="sm"
+                            className="flex-1">
+                            {isThisServiceLoading ? "جاري الحفظ..." : "حفظ"}
+                          </Button>
+                          <Button
+                            onClick={() => handleCancelEdit(service.id)}
+                            variant="outline"
+                            size="sm"
+                            disabled={isThisServiceLoading}
+                            className="flex-1">
+                            إلغاء
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">
+                          {service.description}
+                        </p>
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                          <span className="text-xs text-gray-500">
+                            آخر تحديث:{" "}
+                            {new Date(service.updatedAt).toLocaleDateString(
+                              "ar-EG",
+                            )}
+                          </span>
+                          <Button
+                            onClick={() => setEditingServiceId(service.id)}
+                            variant="outline"
+                            size="sm"
+                            disabled={isLoading}>
+                            تعديل
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

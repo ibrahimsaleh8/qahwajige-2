@@ -8,6 +8,11 @@ export type ProjectContentResponse = {
   whyUs: WhyUsSectionData;
   gallery: GalleryImageData[];
   footer: FooterData;
+  packages: PackageData[];
+  rating: {
+    averageRating: number;
+    totalRatings: number;
+  };
 };
 
 // Header & Footer
@@ -70,4 +75,12 @@ export type WhyUsSectionData = {
 export type GalleryImageData = {
   url: string;
   alt?: string;
+};
+
+// Packages Section
+export type PackageData = {
+  id: string;
+  title: string;
+  features: string[];
+  image: string;
 };
