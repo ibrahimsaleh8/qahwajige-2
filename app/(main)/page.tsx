@@ -1,13 +1,11 @@
 import { AboutUsSection } from "@/components/AboutUsSection";
 import { ContactSection } from "@/components/ContactSection";
-import FloatedIcons from "@/components/FloatedIcons";
-import { Footer } from "@/components/Footer";
 import { GallerySection } from "@/components/GallerySection";
-import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import PremiumPackagesSection from "@/components/PremiumPackagesSection";
 import RatingSection from "@/components/RatingSection";
 import { ServicesSection } from "@/components/ServicesSection";
+import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { APP_URL, CurrentProjectId } from "@/lib/ProjectId";
 import { ProjectContentResponse } from "@/lib/responseType";
 
@@ -39,7 +37,6 @@ export default async function HomePage() {
   }
   return (
     <div>
-      <Header brandName={data.header.brandName} phone={data.footer.phone} />
       <HeroSection {...data.hero} image={data.about.image} />
       <AboutUsSection {...data.about} />
       <ServicesSection {...data.services} />
@@ -54,12 +51,8 @@ export default async function HomePage() {
       />
 
       <GallerySection gallery={data.gallery} />
+      <TestimonialsSection />
       <ContactSection {...data.footer} whatsapp={data.hero?.whatsApp ?? ""} />
-      <FloatedIcons
-        whatsapp={data.hero?.whatsApp ?? ""}
-        telephone={data.footer.phone ?? ""}
-      />
-      <Footer {...data.footer} description={data.hero?.subheadline} />
     </div>
   );
 }

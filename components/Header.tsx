@@ -7,11 +7,12 @@ import Link from "next/link";
 import { HeaderData } from "@/lib/responseType";
 
 export const navLinks = [
-  { href: "#home", label: "الرئيسية" },
-  { href: "#about", label: "من نحن" },
-  { href: "#services", label: "خدماتنا" },
-  { href: "#gallery", label: "معرض الصور" },
-  { href: "#contact", label: "تواصل معنا" },
+  { href: "/#home", label: "الرئيسية" },
+  { href: "/#about", label: "من نحن" },
+  { href: "/articles", label: "خدمات الضيافة" },
+  { href: "/#services", label: "خدماتنا" },
+  { href: "/#gallery", label: "معرض الصور" },
+  { href: "/#contact", label: "تواصل معنا" },
 ];
 
 export function Header({ brandName, phone }: HeaderData & { phone?: string }) {
@@ -38,12 +39,12 @@ export function Header({ brandName, phone }: HeaderData & { phone?: string }) {
         {/* Nav */}
         <nav className="hidden md:flex items-center gap-10">
           {navLinks.map((item) => (
-            <a
+            <Link
               key={item.label}
               href={item.href}
               className="text-sm font-semibold hover:text-main-color transition-colors">
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 

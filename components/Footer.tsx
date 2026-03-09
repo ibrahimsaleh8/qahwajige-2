@@ -1,6 +1,6 @@
 "use client";
 
-import { Coffee, Mail, MapPin, Phone } from "lucide-react";
+import { Coffee, Link, Mail, MapPin, Phone } from "lucide-react";
 import { navLinks } from "./Header";
 import mapimage from "@images/map.webp";
 import Image from "next/image";
@@ -37,11 +37,11 @@ export function Footer({
             <ul className="space-y-4 text-sm text-gray-600">
               {navLinks.map((item) => (
                 <li key={item.label}>
-                  <a
+                  <Link
                     href={item.href}
                     className="hover:text-main-color transition-colors">
                     {item.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
